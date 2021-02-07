@@ -10,6 +10,8 @@ import requests
 import json
 import math
 
+import yaml
+
 
 millnames = ['', ' thousand',' m',' b',' t']
 
@@ -72,7 +74,6 @@ def createTable(data):
     table.add_column("Market Cap", justify="right")
     table.add_column(":thumbs_up:/:thumbs_down:")
 
-
     for ticker in data:
         # print("ticker: ", ticker)
 
@@ -120,13 +121,34 @@ def createTable(data):
 def main(args):
     logging.debug("Your Argument: %s" % args)
 
-    watchlist = (args.watchlist).split(",")
-    logging.debug("watchlist: %s" % watchlist)
+    if not args.watchlist and not args.file:
+        logging.error("Must give watchlists as parameter or file")
+        sys.exit()
 
-    # interval = (args.interval)
+    watchlist = []
+    if args.watchlist:
+        watchlist = (args.watchlist).split(",")
+        logging.debug("watchlist: %s" % watchlist)
 
+    file = (args.file)
+    if file:
+        try:
+            yamlFile = open(file)
+            yamlFile = yaml.load(yamlFile, Loader=yaml.FullLoader)
+            yamlWatchlist = yamlFile["watchlist"]
+
+            watchlist = list(set(watchlist + yamlWatchlist))
+
+        except IOError as err:
+            logging.error("Could not open file {}. Error: {}".format(file, err))
+            sys.exit()
+        except yaml.YAMLError as err:
+            logging.error("Could not load yaml from file {}. Error: {}".format(file, err))
+            sys.exit()
+        
+    watchlist = sorted(watchlist)
     data = apiCall(watchlist)
-    # logging.debug("data: %s" % data)
+    logging.debug("data: %s" % data)
     createTable(data)
 
 
@@ -147,14 +169,14 @@ if __name__ == '__main__':
             dest="watchlist",
             action="store",
             help = "pass watchlist to the program. Comma separated", 
-            default="GME")
-    # parser.add_argument(
-    #         "-i",
-    #         "--interval",
-    #         help="refresh interval in seconds",
-    #         action="store", 
-    #         type=int,
-    #         default=None)
+            default=None)
+    parser.add_argument(
+            "-f",
+            "--file",
+            dest="file",
+            action="store",
+            help="file storing watchlist (yaml)", 
+            default=None)
     parser.add_argument(
             "-v",
             "--verbose",
