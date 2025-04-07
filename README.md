@@ -1,5 +1,7 @@
 # TickerTok
 
+Deprecated as yahoo finance api no longer available
+
 Simple command line portfolio tracker
 
 ## Description
